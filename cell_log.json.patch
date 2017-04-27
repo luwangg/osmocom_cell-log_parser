@@ -1,0 +1,218 @@
+--- cell_log.c	2017-04-26 09:41:35.539552509 +0200
++++ cell_log.c.bak	2017-04-25 16:34:47.344514002 +0200
+@@ -227,51 +227,36 @@
+ 	struct gsm48_sysinfo *s = &sysinfo;
+ 	struct rx_meas_stat *meas = &ms->meas;
+ 	int8_t rxlev = meas->rxlev/meas->frames;
+-	
+-	/*LOGFILE( "ARFCN |MCC          |MNC          |LAC    |cell ID|BSIC |"
++
++	LOGFILE( "ARFCN |MCC          |MNC          |LAC    |cell ID|BSIC |"
+ 		"rx-lev|min-db |max-pwr|C1  |C2  |T3212 |TA |\n");
+ 	LOGFILE("-------+-------------+-------------+-------+-------+-----+"
+ 		"------+-------+-------+----+----+------+---+\n");
+-	*/
+-	LOGFILE("{");
+-		LOGFILE("\"arfcn\":");
+ 		if (arfcn >= 1024) {
+-			LOGFILE("\"%dPCS\"", arfcn-1024+512);
++			LOGFILE("%4dPCS|", arfcn-1024+512);
+ 		} else if (arfcn >= 512 && arfcn <= 885) {
+-			LOGFILE("\"%dDCS\"", arfcn);
++			LOGFILE("%4dDCS|", arfcn);
+ 		} else {
+-			LOGFILE("%d", arfcn);
++			LOGFILE("%4d   |", arfcn);
+ 		}
+-		LOGFILE(",");
+-
+ 		if (s->mcc) {
+-			
+-			LOGFILE("\"mcc\":");
+-			LOGFILE("{\"code\":%d, \"country\":\"%s\"},", atoi(gsm_print_mcc(s->mcc)), gsm_get_mcc(s->mcc));
+-
+-			LOGFILE("\"mnc\":")
+-			LOGFILE("{\"code\":%d, \"operator\":\"%s\"},",atoi(gsm_print_mnc(s->mnc)), gsm_get_mnc(s->mcc, s->mnc));
+-			
+-			LOGFILE("\"lac\":");
+-			LOGFILE("%d,", s->lac);
+-			
+-			LOGFILE("\"cell-id\":");
+-			LOGFILE("%d,", s->cell_id);
+-			
+-			LOGFILE("\"bsic\":");
+-			LOGFILE("%d.%d,", s->bsic >> 3, s->bsic & 0x7);
++			LOGFILE("%3s %9s|%3s %9s|", 
++				gsm_print_mcc(s->mcc), gsm_get_mcc(s->mcc),
++				gsm_print_mnc(s->mnc), gsm_get_mnc(s->mcc, s->mnc)
++				);
++			LOGFILE("0x%04x |0x%04x |", s->lac, s->cell_id);
++			LOGFILE("%1d,%1d  |", s->bsic >> 3, s->bsic & 0x7);
+ 		} else {
+-			LOGFILE("\"mcc\":\"n/a\",\"mnc\":\"n/a\",\"lac\":\"n/a\",\"cell-id\":\"n/a\",\"bsic\":\"n/a\",");
++			LOGFILE("n/a            |n/a            |n/a    |n/a    |n/a  |");
+ 		}
+ 		if (s->si3 || s->si4) {
+-			
+-			LOGFILE("\"rx-lev\":%d,\"min-db\":%d,\"max-pwr\":%d,", 
+-				atoi(gsm_print_rxlev(rxlev)),
++			LOGFILE("%3s   |%4d   |%4d   |", 
++				gsm_print_rxlev(rxlev),
+ 				s->rxlev_acc_min_db,
+ 				s->ms_txpwr_max_cch
+ 				);
+ 		} else {
+-			LOGFILE("\"rx-lev\":\"n/a\",\"min-db\":\"n/a\",\"max-pwr\":\"n/a\",");
++			LOGFILE("n/a    |n/a    |n/a   |");
+ 		}
+ 		if (1) { //fixme
+ 			enum gsm_band band = gsm_arfcn2band(s->arfcn);
+@@ -282,21 +267,21 @@
+ 				ms_pwr_dbm(band, s->ms_txpwr_max_cch),
+ 				ms_class_gmsk_dbm(band, class));
+ 			c2 = calculate_c2(c1,0,0,s->sp, s->sp_cro,0,s->sp_pt,s->sp_to);
+-			LOGFILE("\"c1\":%d,\"c2\":%d,", c1, c2);
++			LOGFILE("%4d|%4d|", c1, c2);
+ 		} else {
+-			LOGFILE("\"c1\":\"n/a\",\"c2\":\"n/a\",");
++			LOGFILE("n/a |n/a |");
+ 		}
+ 		if (s->si3){
+-			LOGFILE("\"t3212\":%d,", s->t3212);
++			LOGFILE("%4d |", s->t3212);
+ 		} else {
+-			LOGFILE("\"t3212\":\"n/a\",");
++			LOGFILE("n/a  |");
+ 		}
+ 		if (log_si.ta != 0xff){
+-			LOGFILE("\"ta\":%d", log_si.ta);
++			LOGFILE("%2d |\n", log_si.ta);
+ 		} else {
+-			LOGFILE("\"ta\":\"n/a\"");
++			LOGFILE("n/a|\n");
+ 		}
+-	LOGFILE("},\n");
++	LOGFILE("\n");
+ }
+ 
+ static void log_nb(void)
+@@ -305,12 +290,10 @@
+ 	char buffer[128];
+ 	int i, j, k;
+ 	j = 0; k = 0;
+-	/*
+ 	for (i = 0; i < 1024; i++) {
+ 		if ((s->freq[i].mask & FREQ_TYPE_NCELL)) {
+ 			if (!k) {
+-				//sprintf(buffer, "SI2 (neigh.) BA=%d: ",
+-				sprintf(buffer, "\"SI2\": { %d %d",
++				sprintf(buffer, "SI2 (neigh.) BA=%d: ",
+ 					s->nb_ba_ind_si2);
+ 				j = strlen(buffer);
+ 			}
+@@ -329,22 +312,15 @@
+ 		buffer[j - 1] = '\0';
+ 		LOGFILE("%s\n\n", buffer);
+ 	}
+-	*/
+-	/*	
+-	if ((s->freq[i].mask & FREQ_TYPE_NCELL)) 
+-		LOGFILE("%d,", s->nb_ba_ind_si2)
+-	}
+-	LOGFILE("\n");
+-	*/
+ }
+ 
+ static void log_gps(void)
+ {
+ 	if (!g.enable || !g.valid)
+ 		return;
+-	//LOGFILE("\n");
+-	//LOGFILE("Position: %.8f %.8f\n", g.longitude, g.latitude);
+-	//LOGFILE("\n");
++	LOGFILE("\n");
++	LOGFILE("Position: %.8f %.8f\n", g.longitude, g.latitude);
++	LOGFILE("\n");
+ }
+ 
+ static void log_time(void)
+@@ -355,47 +331,47 @@
+ 		now = g.gmt;
+ 	else
+ 		time(&now);
+-	//LOGFILE("%s ", ctime(&now));
++	LOGFILE("%s ", ctime(&now));
+ }
+ 
+ static void log_frame(char *tag, uint8_t *data)
+ {
+ 	int i;
+ 
+-	//LOGFILE("%s", tag);
+-	//for (i = 0; i < 23; i++)
+-		//LOGFILE(" %02x", *data++);
+-	//LOGFILE("\n");
++	LOGFILE("%s", tag);
++	for (i = 0; i < 23; i++)
++		LOGFILE(" %02x", *data++);
++	LOGFILE("\n");
+ }
+ 
+ static void log_pm(void)
+ {
+ 	int count = 0, i;
+ 
+-	//LOGFILE("[power] ");
++	LOGFILE("[power] ");
+ 	log_time();
+ 	log_gps();
+ 	for (i = 0; i <= 1023; i++) {
+ 		if ((pm[i].flags & INFO_FLG_PM)) {
+ 			if (!count)
+-				//LOGFILE("ARFCN %d", i);
+-			//LOGFILE(" %d", pm[i].rxlev_dbm);
++				LOGFILE("ARFCN %d", i);
++			LOGFILE(" %d", pm[i].rxlev_dbm);
+ 			count++;
+ 			if (count == 12) {
+-				//LOGFILE("\n");
++				LOGFILE("\n");
+ 				count = 0;
+ 			}
+ 		} else {
+ 			if (count) {
+-				//LOGFILE("\n");
++				LOGFILE("\n");
+ 				count = 0;
+ 			}
+ 		}
+ 	}
+ 	if (count)
+-		//LOGFILE("\n");
++		LOGFILE("\n");
+ 
+-	//LOGFILE("\n");
++	LOGFILE("\n");
+ 	LOGFLUSH();
+ }
+ 
+@@ -411,7 +387,7 @@
+ 		arfcn, gsm_print_mcc(s->mcc), gsm_print_mnc(s->mnc),
+ 		gsm_get_mcc(s->mcc), gsm_get_mnc(s->mcc, s->mnc), ta_str);
+ 
+-	//LOGFILE("[sysinfo] ");
++	LOGFILE("[sysinfo] ");
+ 	log_time();
+ 	log_cs();
+ 	log_nb();
+@@ -430,8 +406,8 @@
+ 	if (s->si4)
+ 		log_frame("SI4", s->si4_msg);
+ 
+-	//LOGFILE("\n");
+-	//LOGFILE("\n");
++	LOGFILE("\n");
++	LOGFILE("\n");
+ 	LOGFLUSH();
+ }
+ 

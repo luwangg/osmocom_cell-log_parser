@@ -1,6 +1,6 @@
 # First of all 
 
-Made for and using [osmocom-bb](git://git.osmocom.org/osmocom-bb.git) repository, and [francoip/thesis](https://gitlab.com/francoip/thesis.git) patchs.
+Made for and using [osmocom-bb](https://github.com/osmocom/osmocom-bb.git) repository, and [francoip/thesis](https://gitlab.com/francoip/thesis.git) patchs.
 
 Set-up process:
 

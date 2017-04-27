@@ -46,17 +46,16 @@ elif args.mode == "filter":
         myfilter = args.filter
         
         output=[]
-
         typeDict = False # flag permettant de dedupliquer les elements etant des listes de listes
         for field in data: # pour chaque element (cellule) trouvé
             if myfilter in field.keys(): # on check si notre filtre correspond à un des elements decrivant la cellule (keys)
-                if type(myfilter) is type(field.keys()): # si ils sont de meme type, parfait on ajoute a la sortie
+                if type(field[myfilter]) is not type(dict()): # si l'entree n'est pas un dictionnaire
                     output.append(field[myfilter])
-                elif type(field[myfilter]) is type(dict()): # sinon, si l'element sélection est un dictionnaire
+                else:
                     typeDict = True
                     output.append([j for i,j in field[myfilter].items()]) # on append chaque element du dictionnaire 
-        if args.no_duplicates: # si l'option no-duplicate est activee
-            
+
+        if args.no_duplicates: # si l'option no-duplicate est activee 
              # si l'element voulu n'est pas de type dict/toutpourri on transforme en set pour virer les doublons, et on le repasse en list pour faciliter le traitement futur de la sortie
             if not typeDict:
                 print(list(set(output)))
